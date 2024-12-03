@@ -13,14 +13,32 @@ namespace ARKM_Bot
             var tradingConfiguration = ConfigurationManager.GetTradingConfiguration();
             var httpClientHelper = new HttpClientHelper();
             var random = new Random();
-            var delay = 1000 * random.Next(botConfiguration.MinDelay, botConfiguration.MaxDelay);
+            UserVolume volume;
 
-            for (var i = 0; i < botConfiguration.Iterations; i++)
+            Console.WriteLine("Trading Bot for Arkham by CoderOfTomorrow \n");
+
+            try
             {
-                await Buy(httpClientHelper);
-                await Sell(httpClientHelper, tradingConfiguration.Symbol);
+                do
+                {
+                    await Buy(httpClientHelper);
+                    await Sell(httpClientHelper, tradingConfiguration.Symbol);
 
-                await Task.Delay(delay);
+                    var result = await httpClientHelper.SendRequest(RequestsFactory.GetUserVolume());
+                    volume = JsonSerializer.Deserialize<UserVolume>(await result.Content.ReadAsStringAsync());
+                    var delay = random.Next(botConfiguration.MinDelay, botConfiguration.MaxDelay);
+                    Console.WriteLine("Traded volume : " + volume.SpotVolume + ", next trade in : " + delay + " seconds.");
+
+                    await Task.Delay(1000 * delay);
+                } while (Convert.ToDecimal(volume.SpotVolume) < botConfiguration.MaxVolume);
+
+                Console.WriteLine("\n Maximum volume was traded. The Bot will stop working.");
+                Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Console.ReadKey();
             }
         }
 

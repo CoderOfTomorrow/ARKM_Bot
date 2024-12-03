@@ -43,5 +43,13 @@ namespace ARKM_Bot
                 Endpoint = endpoints.FirstOrDefault(x => x.Name == "GetAssets").Path
             };
         }
+
+        public static GetRequest GetUserVolume()
+        {
+            return new()
+            {
+                Endpoint = endpoints.FirstOrDefault(x => x.Name == "GetUserVolume").Path
+            };
+        }
     }
 }

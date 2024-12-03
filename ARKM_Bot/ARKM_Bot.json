@@ -1,14 +1,15 @@
 {
   "BotConfiguration": {
-    "Iterations": 20,
+    "Iterations": 100,
     "MinDelay": 30,
-    "MaxDelay": 61
+    "MaxDelay": 61,
+    "MaxVolume": 100000
   },
   "HttpClientConfiguration": {
-    "ApiKey": "",
-    "ApiSecret": "",
+    "ApiKey": "8cc0bde7-14b4-4146-97cf-c612907c08c9",
+    "ApiSecret": "aTHd3C8HaR3rXDtcshM+PLwZCE/u4ZA/Zi+67tT/TaU=",
     "BaseUrl": "https://arkm.com/api",
-    "Expiration": 950
+    "Expiration": 600
   },
   "TradingConfiguration": {
     "Symbol": "ETH",
@@ -30,6 +31,10 @@
     {
       "Name": "GetAssets",
       "Path": "/account/balances"
+    },
+    {
+      "Name": "GetUserVolume",
+      "Path": "/affiliate-dashboard/trading-volume-stats"
     }
   ]
 }
