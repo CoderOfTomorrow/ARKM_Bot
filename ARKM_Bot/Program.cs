@@ -1,4 +1,4 @@
-﻿using ARKM_Bot.Models;
+﻿using ARKM_Bot.DataModels;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -9,99 +9,89 @@ namespace ARKM_Bot
     {
         private static async Task Main()
         {
-            //Parameters:
-            int iterations = 20;
-            Random random = new();
-            int randomNumber = random.Next(30, 61);
+            var botConfiguration = ConfigurationManager.GetBotConfiguration();
+            var tradingConfiguration = ConfigurationManager.GetTradingConfiguration();
+            var httpClientHelper = new HttpClientHelper();
+            var random = new Random();
+            var delay = 1000 * random.Next(botConfiguration.MinDelay, botConfiguration.MaxDelay);
 
-            using HttpClient client = new();
-            client.BaseAddress = new Uri("https://arkm.com/api");
-
-            for (var i = 0; i < iterations; i++)
+            for (var i = 0; i < botConfiguration.Iterations; i++)
             {
-                await Buy(client);
-                await Sell(client);
+                await Buy(httpClientHelper);
+                await Sell(httpClientHelper, tradingConfiguration.Symbol);
 
-                await Task.Delay(1000 * randomNumber);
+                await Task.Delay(delay);
             }
         }
 
-        private static async Task Buy(HttpClient client)
+        private static async Task Buy(HttpClientHelper helper)
         {
             while (true)
             {
-                var buyBalance = await client.SendAsync(GetHttpRequests.GetBalance());
-                await CheckResponse(buyBalance);
-                var balance = GetBalance(await buyBalance.Content.ReadAsStringAsync());
+                var assetsResponse = await helper.SendRequest(RequestsFactory.GetAssets());
+                await CheckResponse(assetsResponse);
+
+                var balance = GetBalance(await assetsResponse.Content.ReadAsStringAsync(), "USDT");
 
                 if (balance < 5)
                     break;
 
-                var buyOrderbookResponse = await client.SendAsync(GetHttpRequests.GetBook());
-                await CheckResponse(buyOrderbookResponse);
+                var orderbookResponse = await helper.SendRequest(RequestsFactory.GetOrderbook());
+                await CheckResponse(orderbookResponse);
 
-                var buyOrderbook = JsonSerializer.Deserialize<SymbolBook>(await buyOrderbookResponse.Content.ReadAsStringAsync()).Asks.Last().Price;
-                var size = GetSize(buyOrderbook, balance);
+                var buyPrice = JsonSerializer.Deserialize<OrderBook>(await orderbookResponse.Content.ReadAsStringAsync()).Asks.Last().Price;
+                var size = balance / Convert.ToDecimal(buyPrice) * 0.99M;
 
-                var buyOrder = await client.SendAsync(PostHttpRequests.CreateNewOrder(buyOrderbook, Math.Round(size, 4).ToString(), "buy"));
-                await CheckResponse(buyOrder);
+                var orderResponse = await helper.SendRequest(RequestsFactory.CreateNewOrder(buyPrice, Math.Round(size, 4).ToString(), "buy"));
+                await CheckResponse(orderResponse);
 
                 await Task.Delay(1000);
 
-                var cancellResponse = await client.SendAsync(PostHttpRequests.CancellAllOrders());
+                var cancellResponse = await helper.SendRequest(RequestsFactory.CancellAllOrders());
                 await CheckResponse(cancellResponse);
             }
         }
 
-        private static async Task Sell(HttpClient client)
+        private static async Task Sell(HttpClientHelper helper, string symbol)
         {
             while (true)
             {
-                var sellBalance = await client.SendAsync(GetHttpRequests.GetBalance());
-                await CheckResponse(sellBalance);
-                var balance = GetSymbolBalance(await sellBalance.Content.ReadAsStringAsync());
+                var assetsResponse = await helper.SendRequest(RequestsFactory.GetAssets());
+                await CheckResponse(assetsResponse);
 
-                var sellOrderbookResponse = await client.SendAsync(GetHttpRequests.GetBook());
-                await CheckResponse(sellOrderbookResponse);
+                var balance = GetBalance(await assetsResponse.Content.ReadAsStringAsync(), symbol);
 
-                var sellOrderbook = JsonSerializer.Deserialize<SymbolBook>(await sellOrderbookResponse.Content.ReadAsStringAsync()).Bids.Last().Price;
+                var orderbookResponse = await helper.SendRequest(RequestsFactory.GetOrderbook());
+                await CheckResponse(orderbookResponse);
 
-                if (balance * Convert.ToDecimal(sellOrderbook) < 5)
+                var sellPrice = JsonSerializer.Deserialize<OrderBook>(await orderbookResponse.Content.ReadAsStringAsync()).Bids.Last().Price;
+
+                if (balance * Convert.ToDecimal(sellPrice) < 5)
                     break;
 
-                var sellOrder = await client.SendAsync(PostHttpRequests.CreateNewOrder(sellOrderbook, balance.ToString(), "sell"));
-                await CheckResponse(sellOrder);
+                var orderResponse = await helper.SendRequest(RequestsFactory.CreateNewOrder(sellPrice, balance.ToString(), "sell"));
+                await CheckResponse(orderResponse);
 
                 await Task.Delay(1000);
 
-                var cancellResponse = await client.SendAsync(PostHttpRequests.CancellAllOrders());
+                var cancellResponse = await helper.SendRequest(RequestsFactory.CancellAllOrders());
                 await CheckResponse(cancellResponse);
             }
         }
 
-        private static decimal GetBalance(string json)
-        {
-            using var jsonDoc = JsonDocument.Parse(json);
-            var stringdata = jsonDoc.RootElement[0].GetProperty("balanceUSDT").GetString();
-            return Convert.ToDecimal(stringdata);
-        }
-
-        private static decimal GetSymbolBalance(string json)
+        private static decimal GetBalance(string json, string symbol)
         {
             JsonNode jsonArray = JsonNode.Parse(json);
 
             if (jsonArray is JsonArray array)
             {
-                var ethNode = array.FirstOrDefault(node => node?["symbol"]?.ToString() == "ETH");
-                var ethBalance = ethNode["balance"].ToString();
-                return Convert.ToDecimal(ethBalance);
+                var node = array.FirstOrDefault(node => node?["symbol"]?.ToString() == symbol);
+                var balance = node["balance"].ToString();
+                return Convert.ToDecimal(balance);
             }
 
             throw new Exception();
         }
-
-        private static decimal GetSize(string price, decimal balance)
-            => balance / Convert.ToDecimal(price) * 0.99M;
 
         private static async Task CheckResponse(HttpResponseMessage response)
         {

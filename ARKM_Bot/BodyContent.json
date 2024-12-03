@@ -1,9 +1,0 @@
-{
-  "GetBook": "ETH_USDT",
-  "CreateNewOrder": {
-    "clientOrderId": "",
-    "postOnly": false,
-    "subaccountId": 0,
-    "type": "limitGtc"
-  }
-}

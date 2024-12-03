@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ARKM_Bot.Models
+namespace ARKM_Bot.DataModels
 {
-    public class NewOrderRequest
+    public class Order
     {
         [JsonPropertyName("clientOrderId")]
         public string ClientOrderId { get; set; } = string.Empty;
@@ -26,6 +26,26 @@ namespace ARKM_Bot.Models
         public string Symbol { get; set; }
 
         [JsonPropertyName("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = "limitGtc";
+
+        public static Order CreateLimit(string price, string side, string size, string pair)
+            => new()
+            {
+                Price = price,
+                Side = side,
+                Size = size,
+                Symbol = pair,
+                Type = "limitGtc"
+            };
+
+        public static Order CreateMarket(string side, string size, string pair)
+            => new()
+            {
+                Price = "0",
+                Side = side,
+                Size = size,
+                Symbol = pair,
+                Type = "market"
+            };
     }
 }

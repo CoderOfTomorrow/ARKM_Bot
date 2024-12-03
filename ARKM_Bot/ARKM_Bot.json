@@ -1,0 +1,35 @@
+{
+  "BotConfiguration": {
+    "Iterations": 20,
+    "MinDelay": 30,
+    "MaxDelay": 61
+  },
+  "HttpClientConfiguration": {
+    "ApiKey": "",
+    "ApiSecret": "",
+    "BaseUrl": "https://arkm.com/api",
+    "Expiration": 950
+  },
+  "TradingConfiguration": {
+    "Symbol": "ETH",
+    "Pair": "ETH_USDT"
+  },
+  "Endpoints": [
+    {
+      "Name": "CancellAllOrders",
+      "Path": "/orders/cancel/all"
+    },
+    {
+      "Name": "CreateNewOrder",
+      "Path": "/orders/new"
+    },
+    {
+      "Name": "GetOrderbook",
+      "Path": "/public/book?symbol="
+    },
+    {
+      "Name": "GetAssets",
+      "Path": "/account/balances"
+    }
+  ]
+}

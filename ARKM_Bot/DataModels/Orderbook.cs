@@ -1,14 +1,14 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ARKM_Bot.Models
+namespace ARKM_Bot.DataModels
 {
-    public class SymbolBook
+    public class OrderBook
     {
         [JsonPropertyName("asks")]
-        public List<Book> Asks { get; set; }
+        public List<PriceData> Asks { get; set; }
 
         [JsonPropertyName("bids")]
-        public List<Book> Bids { get; set; }
+        public List<PriceData> Bids { get; set; }
 
         [JsonPropertyName("group")]
         public string Group { get; set; }
@@ -18,14 +18,5 @@ namespace ARKM_Bot.Models
 
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
-    }
-
-    public class Book
-    {
-        [JsonPropertyName("price")]
-        public string Price { get; set; }
-
-        [JsonPropertyName("size")]
-        public string Size { get; set; }
     }
 }

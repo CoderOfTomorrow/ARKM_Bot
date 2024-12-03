@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="BodyContent.json" />
+    <None Remove="ARKM_Bot.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="BodyContent.json">
+    <Content Include="ARKM_Bot.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
